@@ -88,6 +88,10 @@ func main() {
 			}
 		}
 	}
+	for len(resultchannel) != 0 {
+		result := <-resultchannel
+		fmt.Println(result[0], " took ", result[1], " steps to make it to 1")
+	}
 	close(jobs)
 }
 
