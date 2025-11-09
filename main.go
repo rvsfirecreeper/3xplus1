@@ -6,11 +6,21 @@ import (
 	"strconv"
 )
 
+func collatzworker(jobs <-chan int, resultchannel chan<- [2]int) {
+	for j := range jobs {
+		resultchannel <- collatzcore(j)
+	}
+}
+
 func main() {
+	const numJobs = 10000
+	const workers = 1000
 	var temp string
 	valid := false
 	var innum int
+	var begin int
 	var err error
+	jobs := make(chan int, numJobs*2)
 	for !valid {
 		fmt.Println("Pick a number, we're gonna do some Collatz Wacky Stuff with it")
 		_, err = fmt.Scanln(&temp)
@@ -27,7 +37,7 @@ func main() {
 	}
 	valid = false
 	for !valid {
-		fmt.Println("Would you like single number mode or full mode. Single number mode is required for numbers above [your memory in bytes]/2000 for memory allocation reasons and goroutine reasons(s/f)")
+		fmt.Println("Would you like single number mode, range mode, or full mode. Single number mode or range mode with a small range is required for very large numbers(s/r/f")
 		_, err = fmt.Scanln(&temp)
 		if err != nil {
 			fmt.Println("Buckeroo How")
@@ -39,23 +49,49 @@ func main() {
 			os.Exit(0)
 		case "f":
 			valid = true
+			begin = 0
+		case "r":
+			for !valid {
+				fmt.Println("Where would you like to begin?")
+				_, err = fmt.Scanln(&temp)
+				if err != nil {
+					fmt.Println("Buckeroo How")
+					continue
+				}
+				valid = false
+				begin, err = strconv.Atoi(temp)
+				if err == nil {
+					valid = true
+					begin -= 1
+				} else {
+					fmt.Println("Pick. Something. Valid.")
+				}
+			}
 		default:
 			fmt.Println("Pick something valid, buckeroo")
 		}
 	}
-	results := make([]int, innum+1)
-	resultchannel := make(chan [2]int, innum+1)
-	for num := 1; num <= innum; num++ {
-		go func(n int) {
-			resultchannel <- collatzcore(n)
-		}(num)
+
+	fmt.Print("\033[H\033[2J")
+	fmt.Println("Starting Collatz Calculations!")
+	resultchannel := make(chan [2]int, workers)
+	for num := 1; num <= workers; num++ {
+		go collatzworker(jobs, resultchannel)
 	}
-	for i := 1; i <= innum; i++ {
+
+	for num := 1; num <= innum-begin; num++ {
+		jobs <- num
+		if num%numJobs == 0 {
+			for i := 1; i <= numJobs; i++ {
+				result := <-resultchannel
+				fmt.Printf("%d took %d steps to make it to 1!\n", result[0], result[1])
+			}
+		}
+	}
+	close(jobs)
+	for i := 1; i <= innum-begin; i++ {
 		result := <-resultchannel
-		results[result[0]] = result[1]
-	}
-	for i := 1; i < len(results); i++ {
-		fmt.Printf("%d took %d steps!\n", i, results[i])
+		fmt.Printf("%d took %d steps to make it to 1!", result[0], result[1])
 	}
 }
 
