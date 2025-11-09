@@ -14,7 +14,7 @@ func collatzworker(jobs <-chan int, resultchannel chan<- [2]int) {
 
 func main() {
 	const numJobs = 10000
-	const workers = 1000
+	const workers = 5000
 	var temp string
 	valid := false
 	var innum int
@@ -84,15 +84,11 @@ func main() {
 		if num%numJobs == 0 {
 			for i := 1; i <= numJobs; i++ {
 				result := <-resultchannel
-				fmt.Printf("%d took %d steps to make it to 1!\n", result[0], result[1])
+				fmt.Println(result[0], " took ", result[1], " steps to make it to 1")
 			}
 		}
 	}
 	close(jobs)
-	for i := 1; i <= innum-begin; i++ {
-		result := <-resultchannel
-		fmt.Printf("%d took %d steps to make it to 1!", result[0], result[1])
-	}
 }
 
 func collatzcore(seed int) [2]int {
