@@ -6,22 +6,26 @@ import (
 	"strconv"
 )
 
-func collatzworker(jobs <-chan int, resultchannel chan<- [2]int) {
+func collatzworker(jobs <-chan int, resultchannel chan<- [2]int) { // Defines the workers. If you're wondering how they're not slaves, they're paid in CPU Cycles
 	for j := range jobs {
 		resultchannel <- collatzcore(j)
 	}
 }
 
 func main() {
-	const numJobs = 10000
-	const workers = 5000
-	var temp string
-	valid := false
-	var innum int
-	var begin int
-	var err error
+	const numJobs = 10000                       // Number of jobs before the channel is flushed out
+	const workers = 10000                       // Worker count
+	var temp string                             // Temporary variable used when taking input from terminal
+	valid := false                              // valid is used for input validatiom
+	var innum int                               // maximum number to go up to
+	var begin int                               // minimum number to be calculated
+	var err error                               // err variable for input validation
+	resultchannel := make(chan [2]int, workers) // Where the workers send the work
+	results := make([]int, numJobs)
+	index := 0
 	jobs := make(chan int, numJobs*2)
-	for !valid {
+
+	for !valid { // this entire thing validates an input
 		fmt.Println("Pick a number, we're gonna do some Collatz Wacky Stuff with it")
 		_, err = fmt.Scanln(&temp)
 		if err != nil {
@@ -35,8 +39,9 @@ func main() {
 			fmt.Println("Pick something valid, buckeroo")
 		}
 	}
+	innum += 1
 	valid = false
-	for !valid {
+	for !valid { // this entire thing validates an input
 		fmt.Println("Would you like single number mode, range mode, or full mode. Single number mode or range mode with a small range is required for very large numbers(s/r/f")
 		_, err = fmt.Scanln(&temp)
 		if err != nil {
@@ -72,26 +77,34 @@ func main() {
 		}
 	}
 
-	fmt.Print("\033[H\033[2J")
+	fmt.Print("\033[H\033[2J") // ANSI escape code to clear terminal
 	fmt.Println("Starting Collatz Calculations!")
-	resultchannel := make(chan [2]int, workers)
-	for num := 1; num <= workers; num++ {
+	fmt.Println("Spawning Workers...")
+	for num := range workers {
 		go collatzworker(jobs, resultchannel)
+		_ = num // hacky way to get num as used
 	}
-
+	fmt.Println("Workers spawned! Now sending jobs", innum-begin)
 	for num := 1; num <= innum-begin; num++ {
 		jobs <- num
 		if num%numJobs == 0 {
-			for i := 1; i <= numJobs; i++ {
+			index++
+
+			for i := range numJobs {
 				result := <-resultchannel
-				fmt.Println(result[0], " took ", result[1], " steps to make it to 1")
+				results[result[0]%numJobs] = result[1]
+				fmt.Println(index*numJobs+i, " took ", results[i], " steps to get to 1.")
 			}
+
 		}
 	}
-	for len(resultchannel) != 0 {
+
+	for i := 0; i < (innum-begin)%numJobs; i++ { // flush remaining numbers
 		result := <-resultchannel
-		fmt.Println(result[0], " took ", result[1], " steps to make it to 1")
+		results[result[0]%numJobs] = result[1]
+		fmt.Println(index*numJobs+i, " took ", results[i], " steps to get to 1.")
 	}
+	fmt.Println("All Calculations done!")
 	close(jobs)
 }
 
