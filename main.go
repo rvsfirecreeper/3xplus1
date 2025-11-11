@@ -79,20 +79,20 @@ func main() {
 
 	fmt.Print("\033[H\033[2J") // ANSI escape code to clear terminal
 	fmt.Println("Starting Collatz Calculations!")
-	fmt.Println("Spawning Workers...")
-	for num := range workers {
+	for range workers {
 		go collatzworker(jobs, resultchannel)
-		_ = num // hacky way to get num as used
 	}
 	fmt.Println("Workers spawned! Now sending jobs", innum-begin)
-	for num := 1; num <= innum-begin; num++ {
+	for num := begin + 1; num <= innum-begin; num++ {
 		jobs <- num
 		if num%numJobs == 0 {
 			index++
 
-			for i := range numJobs {
+			for range numJobs {
 				result := <-resultchannel
 				results[result[0]%numJobs] = result[1]
+			}
+			for i := range numJobs {
 				fmt.Println(index*numJobs+i, " took ", results[i], " steps to get to 1.")
 			}
 
@@ -102,6 +102,8 @@ func main() {
 	for i := 0; i < (innum-begin)%numJobs; i++ { // flush remaining numbers
 		result := <-resultchannel
 		results[result[0]%numJobs] = result[1]
+	}
+	for i := 0; i < (innum-begin)%numJobs; i++ { // flush remaining numbers
 		fmt.Println(index*numJobs+i, " took ", results[i], " steps to get to 1.")
 	}
 	fmt.Println("All Calculations done!")
