@@ -14,7 +14,7 @@ func collatzworker(jobs <-chan int, resultchannel chan<- [2]int) { // Defines th
 
 func main() {
 	const numJobs = 10000                       // Number of jobs before the channel is flushed out
-	const workers = 10000                       // Worker count
+	const workers = 10                          // Worker count
 	var temp string                             // Temporary variable used when taking input from terminal
 	valid := false                              // valid is used for input validatiom
 	var innum int                               // maximum number to go up to
@@ -83,28 +83,28 @@ func main() {
 		go collatzworker(jobs, resultchannel)
 	}
 	fmt.Println("Workers spawned! Now sending jobs", innum-begin)
-	for num := begin + 1; num <= innum-begin; num++ {
+	for num := begin + 1; num <= innum; num++ {
 		jobs <- num
 		if num%numJobs == 0 {
-			index++
 
 			for range numJobs {
 				result := <-resultchannel
-				results[result[0]%numJobs] = result[1]
+				results[(result[0]%numJobs)-begin] = result[1]
 			}
-			for i := range numJobs {
-				fmt.Println(index*numJobs+i, " took ", results[i], " steps to get to 1.")
+			for i := 1; i < numJobs; i++ {
+				fmt.Println(index*numJobs+i+begin, " took ", results[i], " steps to get to 1.")
 			}
+			index++
 
 		}
 	}
 
 	for i := 0; i < (innum-begin)%numJobs; i++ { // flush remaining numbers
 		result := <-resultchannel
-		results[result[0]%numJobs] = result[1]
+		results[(result[0]%numJobs)-begin] = result[1]
 	}
-	for i := 0; i < (innum-begin)%numJobs; i++ { // flush remaining numbers
-		fmt.Println(index*numJobs+i, " took ", results[i], " steps to get to 1.")
+	for i := 1; i < (innum-begin)%numJobs; i++ { // flush remaining numbers
+		fmt.Println(index*numJobs+i+begin, " took ", results[i], " steps to get to 1.")
 	}
 	fmt.Println("All Calculations done!")
 	close(jobs)
