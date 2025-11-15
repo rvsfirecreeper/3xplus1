@@ -14,7 +14,7 @@ func collatzworker(jobs <-chan int, resultchannel chan<- [2]int) { // Defines th
 
 func main() {
 	const numJobs = 10000                       // Number of jobs before the channel is flushed out
-	const workers = 10                          // Worker count
+	const workers = 10000                       // Worker count
 	var temp string                             // Temporary variable used when taking input from terminal
 	valid := false                              // valid is used for input validatiom
 	var innum int                               // maximum number to go up to
