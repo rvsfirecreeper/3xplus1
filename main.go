@@ -39,7 +39,6 @@ func main() {
 			fmt.Println("Pick something valid, buckeroo")
 		}
 	}
-	innum += 1
 	valid = false
 	for !valid { // this entire thing validates an input
 		fmt.Println("Would you like single number mode, range mode, or full mode. Single number mode or range mode with a small range is required for very large numbers(s/r/f")
@@ -76,6 +75,7 @@ func main() {
 			fmt.Println("Pick something valid, buckeroo")
 		}
 	}
+	innum += 1
 
 	fmt.Println("Starting Collatz Calculations!")
 	for range workers {
