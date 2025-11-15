@@ -20,7 +20,7 @@ func main() {
 	var innum int                               // maximum number to go up to
 	var begin int                               // minimum number to be calculated
 	var err error                               // err variable for input validation
-	resultchannel := make(chan [2]int, workers) // Where the workers send the work
+	resultchannel := make(chan [2]int, numJobs) // Where the workers send the work
 	results := make([]int, numJobs)
 	index := 0
 	jobs := make(chan int, numJobs*2)
@@ -67,7 +67,7 @@ func main() {
 				begin, err = strconv.Atoi(temp)
 				if err == nil {
 					valid = true
-					begin -= 1
+					begin = begin - 1
 				} else {
 					fmt.Println("Pick. Something. Valid.")
 				}
@@ -77,7 +77,6 @@ func main() {
 		}
 	}
 
-	fmt.Print("\033[H\033[2J") // ANSI escape code to clear terminal
 	fmt.Println("Starting Collatz Calculations!")
 	for range workers {
 		go collatzworker(jobs, resultchannel)
@@ -85,11 +84,11 @@ func main() {
 	fmt.Println("Workers spawned! Now sending jobs", innum-begin)
 	for num := begin + 1; num <= innum; num++ {
 		jobs <- num
-		if num%numJobs == 0 {
+		if (num-begin)%numJobs == 0 {
 
 			for range numJobs {
 				result := <-resultchannel
-				results[(result[0]%numJobs)-begin] = result[1]
+				results[(result[0]-begin)%numJobs] = result[1]
 			}
 			for i := 1; i < numJobs; i++ {
 				fmt.Println(index*numJobs+i+begin, " took ", results[i], " steps to get to 1.")
@@ -101,9 +100,10 @@ func main() {
 
 	for i := 0; i < (innum-begin)%numJobs; i++ { // flush remaining numbers
 		result := <-resultchannel
-		results[(result[0]%numJobs)-begin] = result[1]
+		results[(result[0]-begin)%numJobs] = result[1]
 	}
 	for i := 1; i < (innum-begin)%numJobs; i++ { // flush remaining numbers
+
 		fmt.Println(index*numJobs+i+begin, " took ", results[i], " steps to get to 1.")
 	}
 	fmt.Println("All Calculations done!")
