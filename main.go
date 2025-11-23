@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 )
 
 func collatzworker(jobs <-chan int, resultchannel chan<- [2]int) { // Defines the workers. If you're wondering how they're not slaves, they're paid in CPU Cycles
@@ -78,6 +79,7 @@ func main() {
 	innum += 1
 
 	fmt.Println("Starting Collatz Calculations!")
+	start := time.Now()
 	for range workers {
 		go collatzworker(jobs, resultchannel)
 	}
@@ -94,6 +96,7 @@ func main() {
 				fmt.Println(index*numJobs+i+begin, " took ", results[i], " steps to get to 1.")
 			}
 			index++
+			fmt.Println(index*numJobs+begin, " took ", results[0], " steps to get to 1.")
 
 		}
 	}
@@ -106,7 +109,8 @@ func main() {
 
 		fmt.Println(index*numJobs+i+begin, " took ", results[i], " steps to get to 1.")
 	}
-	fmt.Println("All Calculations done!")
+	elapsed := time.Since(start)
+	fmt.Printf("All Calculations done in %s!", elapsed)
 	close(jobs)
 }
 
