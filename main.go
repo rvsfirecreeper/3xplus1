@@ -33,7 +33,7 @@ func main() {
 			continue
 		}
 		innum, err = strconv.Atoi(temp)
-		if err == nil {
+		if err == nil && innum >= 1 {
 			valid = true
 		} else {
 			fmt.Println("Pick something valid, buckeroo")
@@ -64,7 +64,7 @@ func main() {
 				}
 				valid = false
 				begin, err = strconv.Atoi(temp)
-				if err == nil {
+				if err == nil && innum-begin >= 0 {
 					valid = true
 					begin = begin - 1
 				} else {
