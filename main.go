@@ -111,7 +111,7 @@ func main() {
 		fmt.Println(index*numJobs+i+begin, " took ", results[i], " steps to get to 1.")
 	}
 	elapsed := time.Since(start)
-	fmt.Printf("All Calculations done in %s!", elapsed)
+	fmt.Printf("All %d Calculations done in %s!", innum-begin-1, elapsed)
 	close(jobs)
 }
 
