@@ -37,7 +37,7 @@ func main() {
 	workers := runtime.NumCPU() * 2              // Worker count
 	var temp string                              // Temporary variable used when taking input from terminal
 	valid := false                               // valid is used for input validatiom
-	var innum int                                // maximum number to go up to
+	var end int                                  // maximum number to go up to
 	var begin int                                // minimum number to be calculated
 	var err error                                // err variable for input validation
 	resultchannel := make(chan collatz, numJobs) // Where the workers send the work
@@ -52,8 +52,8 @@ func main() {
 			fmt.Println("That's an Error! Something went wrong")
 			continue
 		}
-		innum, err = strconv.Atoi(temp)
-		if err == nil && innum >= 1 {
+		end, err = strconv.Atoi(temp)
+		if err == nil && end >= 1 {
 			valid = true
 		} else {
 			fmt.Println("Pick something valid, buckeroo")
@@ -69,7 +69,7 @@ func main() {
 		}
 		switch temp {
 		case "s":
-			fmt.Printf("%d took %d steps!\n", innum, collatzcore(innum).steps)
+			fmt.Printf("%d took %d steps!\n", end, collatzcore(end).steps)
 			os.Exit(0)
 		case "f":
 			valid = true
@@ -84,7 +84,7 @@ func main() {
 				}
 				valid = false
 				begin, err = strconv.Atoi(temp)
-				if err == nil && innum-begin >= 0 {
+				if err == nil && end-begin >= 0 {
 					valid = true
 					begin-- // Just prevents random off by one fixes everywhere
 				} else {
@@ -95,15 +95,15 @@ func main() {
 			fmt.Println("Pick something valid, buckeroo")
 		}
 	}
-	innum += 1
+	end += 1
 
 	fmt.Println("Starting Collatz Calculations!")
 	start := time.Now()
 	for range workers {
 		go collatzworker(jobchan, resultchannel)
 	}
-	fmt.Println("Workers spawned! Now sending jobs", innum-begin)
-	for num := begin + 1; num <= innum; num++ {
+	fmt.Println("Workers spawned! Now sending jobs", end-begin)
+	for num := begin + 1; num <= end; num++ {
 		jobchan <- num
 		if (num-begin)%numJobs == 0 {
 
@@ -120,14 +120,14 @@ func main() {
 		}
 	}
 	close(jobchan)
-	for i := 0; i < (innum-begin)%numJobs; i++ { // flush remaining numbers
+	for i := 0; i < (end-begin)%numJobs; i++ { // flush remaining numbers
 		result := <-resultchannel
 		results[(result.seed-begin)%numJobs] = result.steps
 	}
 	close(resultchannel)
-	for i := 1; i < (innum-begin)%numJobs; i++ { // flush remaining numbers
+	for i := 1; i < (end-begin)%numJobs; i++ { // flush remaining numbers
 		fmt.Println(batchnum*numJobs+i+begin, " took ", results[i], " steps to get to 1.")
 	}
 	elapsed := time.Since(start)
-	fmt.Printf("All %d Calculations done in %s!", innum-begin-1, elapsed)
+	fmt.Printf("All %d Calculations done in %s!", end-begin-1, elapsed)
 }
