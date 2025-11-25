@@ -119,15 +119,15 @@ func main() {
 
 		}
 	}
-
+	close(jobchan)
 	for i := 0; i < (innum-begin)%numJobs; i++ { // flush remaining numbers
 		result := <-resultchannel
 		results[(result.seed-begin)%numJobs] = result.steps
 	}
+	close(resultchannel)
 	for i := 1; i < (innum-begin)%numJobs; i++ { // flush remaining numbers
 		fmt.Println(batchnum*numJobs+i+begin, " took ", results[i], " steps to get to 1.")
 	}
 	elapsed := time.Since(start)
 	fmt.Printf("All %d Calculations done in %s!", innum-begin-1, elapsed)
-	close(jobchan)
 }
