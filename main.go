@@ -86,7 +86,7 @@ func main() {
 				begin, err = strconv.Atoi(temp)
 				if err == nil && innum-begin >= 0 {
 					valid = true
-					begin = begin - 1
+					begin-- // Just prevents random off by one fixes everywhere
 				} else {
 					fmt.Println("Pick. Something. Valid.")
 				}
