@@ -21,15 +21,15 @@ func collatzworker(jobs <-chan int, resultchannel chan<- collatz) { // Defines t
 	}
 }
 
-func collatzcore(seed int) collatz {
+func collatzcore(seed int) collatz { // BRANCHLESS
 	var i int
 	current := seed
 	for i = 0; current != 1; i++ {
-		if current%2 == 0 {
-			current = current / 2
-		} else {
-			current = current*3 + 1
-		}
+		evenvalue := current >> 1    // Right Shift = divide by 2
+		oddvalue := current*3 + 1    // CLASSIC COLLATZ
+		evenmask := -(current&1 ^ 1) // Bitmask such that when its even it does nothing but when odd it cancels
+		oddmask := -(current & 1)    // opposite of evenmask
+		current = (evenvalue & evenmask) | (oddvalue & oddmask)
 	}
 	return collatz{seed, i}
 }
