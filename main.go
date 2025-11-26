@@ -5,6 +5,7 @@ import (
 	"fmt"     // Used For Printing
 	"os"      // Used for exit codes
 	"runtime" // Used for worker count
+	"runtime/pprof"
 	"strconv" // Used for converting inputs to integers
 	"time"    // Used for benchmarking
 )
@@ -36,6 +37,8 @@ func collatzcore(seed int) collatz { // BRANCHLESS
 var quiet = flag.Bool("quiet", false, "disable printing of individual results")
 
 func main() {
+	f, _ := os.Create("cpu.prof")
+	pprof.StartCPUProfile(f)
 	flag.Parse()
 	if *quiet {
 		fmt.Println("Shhhhh....")
@@ -152,4 +155,5 @@ func main() {
 	}
 	elapsed := time.Since(start)
 	fmt.Printf("All %d Calculations done in %s!", end-begin-1, elapsed)
+	defer pprof.StopCPUProfile()
 }
