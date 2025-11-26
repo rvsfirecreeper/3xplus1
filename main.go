@@ -1,13 +1,12 @@
 package main
 
 import (
-	"flag"
+	"flag"    // Used for quiet mode
 	"fmt"     // Used For Printing
 	"os"      // Used for exit codes
 	"runtime" // Used for worker count
 	"strconv" // Used for converting inputs to integers
 	"time"    // Used for benchmarking
-	// Used for quiet mode
 )
 
 type collatz struct { // Struct for results
