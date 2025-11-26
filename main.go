@@ -34,11 +34,18 @@ func collatzcore(seed int) collatz { // BRANCHLESS
 	return collatz{seed, i}
 }
 
-var quiet = flag.Bool("quiet", false, "disable printing of individual results")
+var (
+	quiet  = flag.Bool("quiet", false, "disable printing of individual results")
+	record = flag.Bool("quiet", false, "disable printing of individual results, but print records")
+)
 
 func main() {
 	f, _ := os.Create("cpu.prof")
-	pprof.StartCPUProfile(f)
+	err := pprof.StartCPUProfile(f)
+	if err != nil {
+		fmt.Println("Aborting, pprof error.")
+		os.Exit(1)
+	}
 	flag.Parse()
 	if *quiet {
 		fmt.Println("Shhhhh....")
@@ -49,7 +56,6 @@ func main() {
 	valid := false                                  // valid is used for input validatiom
 	var end int                                     // maximum number to go up to
 	var begin int                                   // minimum number to be calculated
-	var err error                                   // err variable for input validation
 	resultchannel := make(chan collatz, numJobs)    // Where the workers send the work
 	results := make([]int, numJobs)
 	batchnum := 0
@@ -113,7 +119,30 @@ func main() {
 		go collatzworker(jobchan, resultchannel)
 	}
 	fmt.Println("Now starting calculations!", end-begin)
-	if !*quiet { // i Know putting it here is ugly. But ugly code is sometimes fast code, and that's what matters more
+	if *quiet { // i Know putting it here is ugly. But ugly code is sometimes fast code, and that's what matters more
+		for num := begin + 1; num <= end; num++ {
+			jobchan <- num
+			if (num-begin)%numJobs == 0 {
+				for range numJobs {
+					<-resultchannel
+				}
+			}
+		}
+	} else if *record {
+		recseq := collatz{steps: 0}
+		for num := begin + 1; num <= end; num++ {
+			jobchan <- num
+			if (num-begin)%numJobs == 0 {
+				for range numJobs {
+					result := <-resultchannel
+					if result.steps > recseq.steps {
+						fmt.Printf("A new Record! %d broke the old record of %d steps with %d steps!", result.seed, recseq.steps, result.steps)
+						recseq = result
+					}
+				}
+			}
+		}
+	} else {
 		for num := begin + 1; num <= end; num++ {
 			jobchan <- num
 			if (num-begin)%numJobs == 0 {
@@ -126,15 +155,6 @@ func main() {
 				}
 				batchnum++
 				fmt.Println(batchnum*numJobs+begin, " took ", results[0], " steps to get to 1.")
-			}
-		}
-	} else {
-		for num := begin + 1; num <= end; num++ {
-			jobchan <- num
-			if (num-begin)%numJobs == 0 {
-				for range numJobs {
-					<-resultchannel
-				}
 			}
 		}
 	}
