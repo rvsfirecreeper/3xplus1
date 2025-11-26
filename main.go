@@ -56,7 +56,9 @@ func main() {
 	valid := false                                  // valid is used for input validatiom
 	var end int                                     // maximum number to go up to
 	var begin int                                   // minimum number to be calculated
-	resultchannel := make(chan collatz, numJobs)    // Where the workers send the work
+	var recseq collatz
+	var result collatz
+	resultchannel := make(chan collatz, numJobs) // Where the workers send the work
 	results := make([]int, numJobs)
 	batchnum := 0
 	jobchan := make(chan int, numJobs*2)
@@ -134,9 +136,9 @@ func main() {
 			jobchan <- num
 			if (num-begin)%numJobs == 0 {
 				for range numJobs {
-					result := <-resultchannel
+					result = <-resultchannel
 					if result.steps > recseq.steps {
-						fmt.Printf("A new Record! %d broke the old record of %d steps with %d steps!", result.seed, recseq.steps, result.steps)
+						fmt.Printf("A new Record! %d broke the old record of %d steps with %d steps!\n", result.seed, recseq.steps, result.steps)
 						recseq = result
 					}
 				}
@@ -147,7 +149,7 @@ func main() {
 			jobchan <- num
 			if (num-begin)%numJobs == 0 {
 				for range numJobs {
-					result := <-resultchannel
+					result = <-resultchannel
 					results[(result.seed-begin)%numJobs] = result.steps
 				}
 				for i := 1; i < numJobs; i++ {
@@ -159,18 +161,26 @@ func main() {
 		}
 	}
 	close(jobchan)
-	if !*quiet {
+	if *quiet {
 		for i := 0; i < (end-begin)%numJobs; i++ { // flush remaining numbers
-			result := <-resultchannel
+			<-resultchannel
+		}
+	} else if *record {
+		for i := 0; i < (end-begin)%numJobs; i++ { // flush remaining numbers
+			result = <-resultchannel
+		}
+		if result.steps > recseq.steps {
+			fmt.Printf("A new Record! %d broke the old record of %d steps with %d steps!\n", result.seed, recseq.steps, result.steps)
+			recseq = result
+		}
+	} else {
+		for i := 0; i < (end-begin)%numJobs; i++ { // flush remaining numbers
+			result = <-resultchannel
 			results[(result.seed-begin)%numJobs] = result.steps
 		}
 		close(resultchannel)
 		for i := 1; i < (end-begin)%numJobs; i++ { // flush remaining numbers
 			fmt.Println(batchnum*numJobs+i+begin, " took ", results[i], " steps to get to 1.")
-		}
-	} else {
-		for i := 0; i < (end-begin)%numJobs; i++ { // flush remaining numbers
-			<-resultchannel
 		}
 	}
 	elapsed := time.Since(start)
