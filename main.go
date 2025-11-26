@@ -1,11 +1,13 @@
 package main
 
 import (
+	"flag"
 	"fmt"     // Used For Printing
 	"os"      // Used for exit codes
 	"runtime" // Used for worker count
 	"strconv" // Used for converting inputs to integers
 	"time"    // Used for benchmarking
+	// Used for quiet mode
 )
 
 type collatz struct { // Struct for results
@@ -32,7 +34,13 @@ func collatzcore(seed int) collatz {
 	return collatz{seed, i}
 }
 
+var quiet = flag.Bool("quiet", false, "disable printing of individual results")
+
 func main() {
+	flag.Parse()
+	if *quiet {
+		fmt.Println("Shhhhh....")
+	}
 	const numJobs = 10000                           // Number of jobs before the channel is flushed out
 	workers := runtime.GOMAXPROCS(runtime.NumCPU()) // Worker count
 	var temp string                                 // Temporary variable used when taking input from terminal
@@ -103,30 +111,45 @@ func main() {
 		go collatzworker(jobchan, resultchannel)
 	}
 	fmt.Println("Now starting calculations!", end-begin)
-	for num := begin + 1; num <= end; num++ {
-		jobchan <- num
-		if (num-begin)%numJobs == 0 {
-
-			for range numJobs {
-				result := <-resultchannel
-				results[(result.seed-begin)%numJobs] = result.steps
+	if !*quiet { // i Know putting it here is ugly. But ugly code is sometimes fast code, and that's what matters more
+		for num := begin + 1; num <= end; num++ {
+			jobchan <- num
+			if (num-begin)%numJobs == 0 {
+				for range numJobs {
+					result := <-resultchannel
+					results[(result.seed-begin)%numJobs] = result.steps
+				}
+				for i := 1; i < numJobs; i++ {
+					fmt.Println(batchnum*numJobs+i+begin, " took ", results[i], " steps to get to 1.")
+				}
+				batchnum++
+				fmt.Println(batchnum*numJobs+begin, " took ", results[0], " steps to get to 1.")
 			}
-			for i := 1; i < numJobs; i++ {
-				fmt.Println(batchnum*numJobs+i+begin, " took ", results[i], " steps to get to 1.")
+		}
+	} else {
+		for num := begin + 1; num <= end; num++ {
+			jobchan <- num
+			if (num-begin)%numJobs == 0 {
+				for range numJobs {
+					<-resultchannel
+				}
 			}
-			batchnum++
-			fmt.Println(batchnum*numJobs+begin, " took ", results[0], " steps to get to 1.")
-
 		}
 	}
 	close(jobchan)
-	for i := 0; i < (end-begin)%numJobs; i++ { // flush remaining numbers
-		result := <-resultchannel
-		results[(result.seed-begin)%numJobs] = result.steps
-	}
-	close(resultchannel)
-	for i := 1; i < (end-begin)%numJobs; i++ { // flush remaining numbers
-		fmt.Println(batchnum*numJobs+i+begin, " took ", results[i], " steps to get to 1.")
+	if !*quiet {
+		for i := 0; i < (end-begin)%numJobs; i++ { // flush remaining numbers
+			result := <-resultchannel
+			results[(result.seed-begin)%numJobs] = result.steps
+		}
+		close(resultchannel)
+		for i := 1; i < (end-begin)%numJobs; i++ { // flush remaining numbers
+			fmt.Println(batchnum*numJobs+i+begin, " took ", results[i], " steps to get to 1.")
+		}
+	} else {
+		for i := 0; i < (end-begin)%numJobs; i++ { // flush remaining numbers
+			<-resultchannel
+		}
 	}
 	elapsed := time.Since(start)
 	fmt.Printf("All %d Calculations done in %s!", end-begin-1, elapsed)
