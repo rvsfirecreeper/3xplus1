@@ -33,14 +33,14 @@ func collatzcore(seed int) collatz {
 }
 
 func main() {
-	const numJobs = 10000                        // Number of jobs before the channel is flushed out
-	workers := runtime.NumCPU() * 2              // Worker count
-	var temp string                              // Temporary variable used when taking input from terminal
-	valid := false                               // valid is used for input validatiom
-	var end int                                  // maximum number to go up to
-	var begin int                                // minimum number to be calculated
-	var err error                                // err variable for input validation
-	resultchannel := make(chan collatz, numJobs) // Where the workers send the work
+	const numJobs = 10000                           // Number of jobs before the channel is flushed out
+	workers := runtime.GOMAXPROCS(runtime.NumCPU()) // Worker count
+	var temp string                                 // Temporary variable used when taking input from terminal
+	valid := false                                  // valid is used for input validatiom
+	var end int                                     // maximum number to go up to
+	var begin int                                   // minimum number to be calculated
+	var err error                                   // err variable for input validation
+	resultchannel := make(chan collatz, numJobs)    // Where the workers send the work
 	results := make([]int, numJobs)
 	batchnum := 0
 	jobchan := make(chan int, numJobs*2)
