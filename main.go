@@ -46,17 +46,17 @@ func main() {
 	jobchan := make(chan int, numJobs*2)
 
 	for !valid { // this entire thing validates an input
-		fmt.Println("Pick a number, we're gonna do some Collatz Wacky Stuff with it")
+		fmt.Println("Pick a number, and this program will calculate a lot of Collatz Sequences.")
 		_, err = fmt.Scanln(&temp)
 		if err != nil {
-			fmt.Println("That's an Error! Something went wrong")
+			fmt.Println("Error receiving input, please try again.")
 			continue
 		}
 		end, err = strconv.Atoi(temp)
 		if err == nil && end >= 1 {
 			valid = true
 		} else {
-			fmt.Println("Pick something valid, buckeroo")
+			fmt.Println("Pick a valid psoitive integer.")
 		}
 	}
 	valid = false
@@ -64,7 +64,7 @@ func main() {
 		fmt.Println("Would you like single number mode, range mode, or full mode. Single number mode or range mode with a small range is required for very large numbers(s/r/f")
 		_, err = fmt.Scanln(&temp)
 		if err != nil {
-			fmt.Println("Buckeroo How")
+			fmt.Println("Error receiving input, please try again.")
 			continue
 		}
 		switch temp {
@@ -79,7 +79,7 @@ func main() {
 				fmt.Println("Where would you like to begin?")
 				_, err = fmt.Scanln(&temp)
 				if err != nil {
-					fmt.Println("Buckeroo How")
+					fmt.Println("Error receiving input, please try again.")
 					continue
 				}
 				valid = false
@@ -88,21 +88,21 @@ func main() {
 					valid = true
 					begin-- // Just prevents random off by one fixes everywhere
 				} else {
-					fmt.Println("Pick. Something. Valid.")
+					fmt.Println("Pick a valid integer less than the number you selected earlier.")
 				}
 			}
 		default:
-			fmt.Println("Pick something valid, buckeroo")
+			fmt.Println("Pick a valid option, please.")
 		}
 	}
 	end += 1
 
-	fmt.Println("Starting Collatz Calculations!")
+	fmt.Println("Initializing...")
 	start := time.Now()
 	for range workers {
 		go collatzworker(jobchan, resultchannel)
 	}
-	fmt.Println("Workers spawned! Now sending jobs", end-begin)
+	fmt.Println("Now starting calculations!", end-begin)
 	for num := begin + 1; num <= end; num++ {
 		jobchan <- num
 		if (num-begin)%numJobs == 0 {
