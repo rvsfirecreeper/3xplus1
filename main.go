@@ -91,7 +91,7 @@ func main() {
 			os.Exit(0)
 		case "f":
 			valid = true
-			begin = 0
+			begin = 1
 		case "r":
 			for !valid {
 				fmt.Println("Where would you like to begin?")
@@ -100,11 +100,11 @@ func main() {
 					fmt.Println("Error receiving input, please try again.")
 					continue
 				}
+				end-- // Fixes bug where one last number tries to send after the resultchannel closes.
 				valid = false
 				begin, err = strconv.Atoi(temp)
 				if err == nil && end-begin >= 0 {
 					valid = true
-					begin-- // Just prevents random off by one fixes everywhere
 				} else {
 					fmt.Println("Pick a valid integer less than the number you selected earlier.")
 				}
@@ -114,7 +114,6 @@ func main() {
 		}
 	}
 	end += 1
-
 	fmt.Println("Initializing...")
 	start := time.Now()
 	for range workers {
@@ -161,11 +160,11 @@ func main() {
 	}
 	close(jobchan)
 	if *quiet {
-		for i := 0; i < (end-begin)%numJobs; i++ { // flush remaining numbers
+		for i := 1; i < (end-begin)%numJobs; i++ { // flush remaining numbers
 			<-resultchannel
 		}
 	} else if *record {
-		for i := 0; i < (end-begin)%numJobs; i++ { // flush remaining numbers
+		for i := 1; i < (end-begin)%numJobs; i++ { // flush remaining numbers
 			result = <-resultchannel
 			if result.steps > recseq.steps {
 				fmt.Printf("A new Record! %d broke the old record of %d steps with %d steps!\n", result.seed, recseq.steps, result.steps)
@@ -173,16 +172,16 @@ func main() {
 			}
 		}
 	} else {
-		for i := 0; i < (end-begin)%numJobs; i++ { // flush remaining numbers
+		for i := 1; i < (end-begin)%numJobs; i++ { // flush remaining numbers
 			result = <-resultchannel
 			results[(result.seed-begin)%numJobs] = result.steps
 		}
-		close(resultchannel)
 		for i := 1; i < (end-begin)%numJobs; i++ { // flush remaining numbers
 			fmt.Println(batchnum*numJobs+i+begin, " took ", results[i], " steps to get to 1.")
 		}
 	}
+	close(resultchannel)
 	elapsed := time.Since(start)
-	fmt.Printf("All %d Calculations done in %s!", end-begin-1, elapsed)
+	fmt.Printf("All %d Calculations done in %s!", end-begin, elapsed)
 	defer pprof.StopCPUProfile()
 }
