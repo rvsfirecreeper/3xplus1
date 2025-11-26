@@ -131,7 +131,6 @@ func main() {
 			}
 		}
 	} else if *record {
-		recseq := collatz{steps: 0}
 		for num := begin + 1; num <= end; num++ {
 			jobchan <- num
 			if (num-begin)%numJobs == 0 {
