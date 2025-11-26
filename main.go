@@ -36,7 +36,7 @@ func collatzcore(seed int) collatz { // BRANCHLESS
 
 var (
 	quiet  = flag.Bool("quiet", false, "disable printing of individual results")
-	record = flag.Bool("quiet", false, "disable printing of individual results, but print records")
+	record = flag.Bool("record", false, "disable printing of individual results, but print records")
 )
 
 func main() {
