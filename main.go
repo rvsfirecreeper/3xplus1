@@ -168,10 +168,10 @@ func main() {
 	} else if *record {
 		for i := 0; i < (end-begin)%numJobs; i++ { // flush remaining numbers
 			result = <-resultchannel
-		}
-		if result.steps > recseq.steps {
-			fmt.Printf("A new Record! %d broke the old record of %d steps with %d steps!\n", result.seed, recseq.steps, result.steps)
-			recseq = result
+			if result.steps > recseq.steps {
+				fmt.Printf("A new Record! %d broke the old record of %d steps with %d steps!\n", result.seed, recseq.steps, result.steps)
+				recseq = result
+			}
 		}
 	} else {
 		for i := 0; i < (end-begin)%numJobs; i++ { // flush remaining numbers
