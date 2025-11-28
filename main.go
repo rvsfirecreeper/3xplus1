@@ -15,6 +15,16 @@ type collatz struct { // Struct for results
 	steps int
 }
 
+type intconstraint struct {
+	min   *int
+	equal *int
+	max   *int
+}
+
+func mkpoint[T any](v T) *T {
+	return &v
+}
+
 func collatzworker(jobs <-chan int, resultchannel chan<- collatz) { // Defines the workers. If you're wondering how they're not slaves, they're paid in CPU Cycles
 	for j := range jobs {
 		resultchannel <- collatzcore(j)
@@ -39,6 +49,50 @@ var (
 	record = flag.Bool("record", false, "disable printing of individual results, but print records")
 )
 
+func intInput(prompt string, conditions intconstraint) int {
+	valid := false
+	var flag bool
+	var temp string
+	var err error
+	var num int
+	for !valid {
+		flag = false
+		fmt.Println(prompt)
+		_, err = fmt.Scanln(&temp)
+		if err != nil {
+			fmt.Println("Hmm, you seem to have entered an invalid value.")
+			fmt.Println("Hint: Cannot be blank")
+			continue
+		}
+		num, err = strconv.Atoi(temp)
+		if err != nil {
+			fmt.Println("Hmm, you seem to have entered an invalid value.")
+			fmt.Println("Hint: Must be integer")
+			continue
+		}
+		if conditions.equal != nil && num != *conditions.equal {
+			fmt.Println("Hmm, you seem to have entered an invalid value.")
+			fmt.Printf("Hint: Must be equal to %d\n", *conditions.equal)
+			flag = true
+		}
+		if conditions.max != nil && num > *conditions.max {
+			fmt.Println("Hmm, you seem to have entered an invalid value.")
+			fmt.Printf("Hint: Must be less than %d\n", *conditions.max+1)
+			flag = true
+		}
+		if conditions.min != nil && num < *conditions.min {
+			fmt.Println("Hmm, you seem to have entered an invalid value.")
+			fmt.Printf("Hint: Must be more than %d\n", *conditions.min-1)
+			flag = true
+		}
+		if flag {
+			continue
+		}
+		valid = true
+	}
+	return num
+}
+
 func main() {
 	f, _ := os.Create("cpu.prof")
 	err := pprof.StartCPUProfile(f)
@@ -52,8 +106,6 @@ func main() {
 	}
 	const numJobs = 10000                           // Number of jobs before the channel is flushed out
 	workers := runtime.GOMAXPROCS(runtime.NumCPU()) // Worker count
-	var temp string                                 // Temporary variable used when taking input from terminal
-	valid := false                                  // valid is used for input validatiom
 	var end int                                     // maximum number to go up to
 	var begin int                                   // minimum number to be calculated
 	var recseq collatz
@@ -62,56 +114,18 @@ func main() {
 	results := make([]int, numJobs)
 	batchnum := 0
 	jobchan := make(chan int, numJobs*2)
+	end = intInput("Pick a number, and this program will calculate a lot of Collatz Sequences.", intconstraint{min: mkpoint(1)})
+	begin = intInput("Would you like single number mode, range mode, or full mode.(1 for single, 2 for full, 3 for range)", intconstraint{min: mkpoint(1), max: mkpoint(3)})
+	switch begin {
+	case 1:
+		fmt.Printf("%d took %d steps!\n", end, collatzcore(end).steps)
+		os.Exit(0)
+	case 2:
+		begin = 1
+	case 3:
+		begin = intInput("Where would you like to begin?", intconstraint{min: mkpoint(1), max: &end})
 
-	for !valid { // this entire thing validates an input
-		fmt.Println("Pick a number, and this program will calculate a lot of Collatz Sequences.")
-		_, err = fmt.Scanln(&temp)
-		if err != nil {
-			fmt.Println("Error receiving input, please try again.")
-			continue
-		}
-		end, err = strconv.Atoi(temp)
-		if err == nil && end >= 1 {
-			valid = true
-		} else {
-			fmt.Println("Pick a valid psoitive integer.")
-		}
-	}
-	valid = false
-	for !valid { // this entire thing validates an input
-		fmt.Println("Would you like single number mode, range mode, or full mode. Single number mode or range mode with a small range is required for very large numbers(s/r/f")
-		_, err = fmt.Scanln(&temp)
-		if err != nil {
-			fmt.Println("Error receiving input, please try again.")
-			continue
-		}
-		switch temp {
-		case "s":
-			fmt.Printf("%d took %d steps!\n", end, collatzcore(end).steps)
-			os.Exit(0)
-		case "f":
-			valid = true
-			begin = 1
-		case "r":
-			for !valid {
-				fmt.Println("Where would you like to begin?")
-				_, err = fmt.Scanln(&temp)
-				if err != nil {
-					fmt.Println("Error receiving input, please try again.")
-					continue
-				}
-				end-- // Fixes bug where one last number tries to send after the resultchannel closes.
-				valid = false
-				begin, err = strconv.Atoi(temp)
-				if err == nil && end-begin >= 0 {
-					valid = true
-				} else {
-					fmt.Println("Pick a valid integer less than the number you selected earlier.")
-				}
-			}
-		default:
-			fmt.Println("Pick a valid option, please.")
-		}
+		end-- // Fixes bug where one last number tries to send after the resultchannel closes.
 	}
 	end += 1
 	fmt.Println("Initializing...")
