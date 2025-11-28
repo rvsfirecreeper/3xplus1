@@ -98,6 +98,7 @@ func main() {
 	flag.Parse()
 	if *quiet && *record {
 		fmt.Fprintln(os.Stderr, "Error: quiet and record mode are conflicting.")
+		os.Exit(1)
 	}
 	f, _ := os.Create("cpu.prof")
 	err := pprof.StartCPUProfile(f)
