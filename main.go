@@ -101,11 +101,6 @@ func main() {
 		os.Exit(1)
 	}
 	f, _ := os.Create("cpu.prof")
-	err := pprof.StartCPUProfile(f)
-	if err != nil {
-		fmt.Println("Aborting, pprof error.")
-		os.Exit(1)
-	}
 	if *quiet {
 		fmt.Println("Shhhhh.... it's quiet mode.")
 	}
@@ -138,6 +133,11 @@ func main() {
 	end += 1
 	fmt.Println("Initializing...")
 	start := time.Now()
+	err := pprof.StartCPUProfile(f)
+	if err != nil {
+		fmt.Println("Aborting, pprof error.")
+		os.Exit(1)
+	}
 	for range workers {
 		go collatzworker(jobchan, resultchannel)
 	}
