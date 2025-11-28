@@ -1,13 +1,14 @@
 package main
 
 import (
-	"flag"    // Used for quiet mode
 	"fmt"     // Used For Printing
 	"os"      // Used for exit codes
 	"runtime" // Used for worker count
 	"runtime/pprof"
 	"strconv" // Used for converting inputs to integers
 	"time"    // Used for benchmarking
+
+	flag "github.com/spf13/pflag" // Used for quiet mode
 )
 
 type collatz struct { // Struct for results
@@ -45,8 +46,8 @@ func collatzcore(seed int) collatz { // BRANCHLESS
 }
 
 var (
-	quiet  = flag.Bool("quiet", false, "disable printing of individual results")
-	record = flag.Bool("record", false, "disable printing of individual results, but print records")
+	quiet  = flag.BoolP("quiet", "q", false, "disable printing of individual results")
+	record = flag.BoolP("record", "r", false, "disable printing of individual results, but print records")
 )
 
 func intInput(prompt string, conditions intconstraint) int {
@@ -94,15 +95,21 @@ func intInput(prompt string, conditions intconstraint) int {
 }
 
 func main() {
+	flag.Parse()
+	if *quiet && *record {
+		fmt.Fprintln(os.Stderr, "Error: quiet and record mode are conflicting.")
+	}
 	f, _ := os.Create("cpu.prof")
 	err := pprof.StartCPUProfile(f)
 	if err != nil {
 		fmt.Println("Aborting, pprof error.")
 		os.Exit(1)
 	}
-	flag.Parse()
 	if *quiet {
-		fmt.Println("Shhhhh....")
+		fmt.Println("Shhhhh.... it's quiet mode.")
+	}
+	if *record {
+		fmt.Println("Who will be the best? It's record mode! ")
 	}
 	const numJobs = 10000                           // Number of jobs before the channel is flushed out
 	workers := runtime.GOMAXPROCS(runtime.NumCPU()) // Worker count
