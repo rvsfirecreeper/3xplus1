@@ -13,3 +13,6 @@ build:
 		GOOS=$$os GOARCH=$$arch go build -ldflags="-s -w" \
 			-o="execs/$$os-$$arch-3xp1$$suffix"; \
 	done
+clean:
+	mkdir -p execs
+	rm execs/*
