@@ -1,3 +1,4 @@
+SHELL := /bin/bash
 build:
 	mkdir -p execs
 	for exec in $$(go tool dist list \
