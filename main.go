@@ -80,10 +80,7 @@ func main() {
 		begin = 1
 	case 3:
 		begin = si.NumInput("Where would you like to begin?", si.Constraint[int]{Min: mkpoint(1), Max: &end})
-
-		end-- // Fixes bug where one last number tries to send after the resultchannel closes.
 	}
-	end += 1
 	fmt.Println("Initializing...")
 	start := time.Now()
 	err := pprof.StartCPUProfile(f)
@@ -94,20 +91,20 @@ func main() {
 	for range workers {
 		go collatzworker(jobchan, resultchannel)
 	}
-	fmt.Println("Now starting calculations!", end-begin)
+	fmt.Println("Now starting calculations!")
 	if *quiet { // i Know putting it here is ugly. But ugly code is sometimes fast code, and that's what matters more
-		for num := begin + 1; num <= end; num++ {
+		for num := begin; num <= end; num++ {
 			jobchan <- num
-			if (num-begin)%numJobs == 0 {
+			if (num-begin+1)%numJobs == 0 && num-begin != 0 {
 				for range numJobs {
 					<-resultchannel
 				}
 			}
 		}
 	} else if *record {
-		for num := begin + 1; num <= end; num++ {
+		for num := begin; num <= end; num++ {
 			jobchan <- num
-			if (num-begin)%numJobs == 0 {
+			if (num-begin+1)%numJobs == 0 && num-begin != 0 {
 				for range numJobs {
 					result = <-resultchannel
 					if result.steps > recseq.steps {
@@ -118,9 +115,9 @@ func main() {
 			}
 		}
 	} else {
-		for num := begin + 1; num <= end; num++ {
+		for num := begin; num <= end; num++ {
 			jobchan <- num
-			if (num-begin)%numJobs == 0 {
+			if (num-begin+1)%numJobs == 0 && num-begin != 0 {
 				for range numJobs {
 					result = <-resultchannel
 					results[(result.seed-begin)%numJobs] = result.steps
@@ -135,11 +132,11 @@ func main() {
 	}
 	close(jobchan)
 	if *quiet {
-		for i := 1; i < (end-begin)%numJobs; i++ { // flush remaining numbers
+		for i := 0; i < (end-begin+1)%numJobs; i++ { // flush remaining numbers
 			<-resultchannel
 		}
 	} else if *record {
-		for i := 1; i < (end-begin)%numJobs; i++ { // flush remaining numbers
+		for i := 0; i < (end-begin+1)%numJobs; i++ { // flush remaining numbers
 			result = <-resultchannel
 			if result.steps > recseq.steps {
 				fmt.Printf("A new Record! %d broke the old record of %d steps with %d steps!\n", result.seed, recseq.steps, result.steps)
@@ -147,16 +144,16 @@ func main() {
 			}
 		}
 	} else {
-		for i := 1; i < (end-begin)%numJobs; i++ { // flush remaining numbers
+		for i := 0; i < (end-begin+1)%numJobs; i++ { // flush remaining numbers
 			result = <-resultchannel
 			results[(result.seed-begin)%numJobs] = result.steps
 		}
-		for i := 1; i < (end-begin)%numJobs; i++ { // flush remaining numbers
+		for i := 0; i < (end-begin+1)%numJobs; i++ { // flush remaining numbers
 			fmt.Println(batchnum*numJobs+i+begin, " took ", results[i], " steps to get to 1.")
 		}
 	}
 	close(resultchannel)
 	elapsed := time.Since(start)
-	fmt.Printf("All %d Calculations done in %s!", end-begin, elapsed)
+	fmt.Printf("All %d Calculations done in %s!", end-begin+1, elapsed)
 	defer pprof.StopCPUProfile()
 }
