@@ -1,25 +1,18 @@
 package main
 
 import (
-	"fmt"     // Used For Printing
-	"os"      // Used for exit codes
-	"runtime" // Used for worker count
-	"runtime/pprof"
-	"strconv" // Used for converting inputs to integers
-	"time"    // Used for benchmarking
-
+	si "codeberg.org/rageh84/saferinput"
+	"fmt"                         // Used For Printing
 	flag "github.com/spf13/pflag" // Used for quiet mode
+	"os"                          // Used for exit codes
+	"runtime"                     // Used for worker count
+	"runtime/pprof"
+	"time" // Used for benchmarking
 )
 
 type collatz struct { // Struct for results
 	seed  int
 	steps int
-}
-
-type intconstraint struct {
-	min   *int
-	equal *int
-	max   *int
 }
 
 func mkpoint[T any](v T) *T {
@@ -50,50 +43,6 @@ var (
 	record = flag.BoolP("record", "r", false, "disable printing of individual results, but print records")
 )
 
-func intInput(prompt string, conditions intconstraint) int {
-	valid := false
-	var flag bool
-	var temp string
-	var err error
-	var num int
-	for !valid {
-		flag = false
-		fmt.Println(prompt)
-		_, err = fmt.Scanln(&temp)
-		if err != nil {
-			fmt.Println("Hmm, you seem to have entered an invalid value.")
-			fmt.Println("Hint: Cannot be blank")
-			continue
-		}
-		num, err = strconv.Atoi(temp)
-		if err != nil {
-			fmt.Println("Hmm, you seem to have entered an invalid value.")
-			fmt.Println("Hint: Must be integer")
-			continue
-		}
-		if conditions.equal != nil && num != *conditions.equal {
-			fmt.Println("Hmm, you seem to have entered an invalid value.")
-			fmt.Printf("Hint: Must be equal to %d\n", *conditions.equal)
-			flag = true
-		}
-		if conditions.max != nil && num > *conditions.max {
-			fmt.Println("Hmm, you seem to have entered an invalid value.")
-			fmt.Printf("Hint: Must be less than %d\n", *conditions.max+1)
-			flag = true
-		}
-		if conditions.min != nil && num < *conditions.min {
-			fmt.Println("Hmm, you seem to have entered an invalid value.")
-			fmt.Printf("Hint: Must be more than %d\n", *conditions.min-1)
-			flag = true
-		}
-		if flag {
-			continue
-		}
-		valid = true
-	}
-	return num
-}
-
 func main() {
 	flag.Parse()
 	if *quiet && *record {
@@ -117,8 +66,12 @@ func main() {
 	results := make([]int, numJobs)
 	batchnum := 0
 	jobchan := make(chan int, numJobs*2)
-	end = intInput("Pick a number, and this program will calculate a lot of Collatz Sequences.", intconstraint{min: mkpoint(1)})
-	begin = intInput("Would you like single number mode, range mode, or full mode.(1 for single, 2 for full, 3 for range)", intconstraint{min: mkpoint(1), max: mkpoint(3)})
+	end = si.NumInput("Pick a number, and this program will calculate a lot of Collatz Sequences.", si.Constraint[int]{
+		Min: mkpoint(1),
+	})
+	begin = si.NumInput(
+		"Would you like single number mode, range mode, or full mode.(1 for single, 2 for full, 3 for range)",
+		si.Constraint[int]{Min: mkpoint(1), Max: mkpoint(3)})
 	switch begin {
 	case 1:
 		fmt.Printf("%d took %d steps!\n", end, collatzcore(end).steps)
@@ -126,7 +79,7 @@ func main() {
 	case 2:
 		begin = 1
 	case 3:
-		begin = intInput("Where would you like to begin?", intconstraint{min: mkpoint(1), max: &end})
+		begin = si.NumInput("Where would you like to begin?", si.Constraint[int]{Min: mkpoint(1), Max: &end})
 
 		end-- // Fixes bug where one last number tries to send after the resultchannel closes.
 	}

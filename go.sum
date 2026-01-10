@@ -1,2 +1,6 @@
+codeberg.org/rageh84/saferinput v1.1.0 h1:WIfRvpZezAAv9FNh9/AU4mOgV1ZaoSayMiBC7CduV7o=
+codeberg.org/rageh84/saferinput v1.1.0/go.mod h1:IDX7QaD3hHI/QirIPM316JxZwv4AKqnVC0YLNrGl0ms=
+codeberg.org/rageh84/saferinput v1.2.0 h1:qBf3nhYvLO2nfr/+wlO5mBpEkfWQdE9M9S38RNOISNs=
+codeberg.org/rageh84/saferinput v1.2.0/go.mod h1:IDX7QaD3hHI/QirIPM316JxZwv4AKqnVC0YLNrGl0ms=
 github.com/spf13/pflag v1.0.10 h1:4EBh2KAYBwaONj6b2Ye1GiHfwjqyROoF4RwYO+vPwFk=
 github.com/spf13/pflag v1.0.10/go.mod h1:McXfInJRrz4CZXVZOBLb0bTZqETkiAhM9Iw0y3An2Bg=
